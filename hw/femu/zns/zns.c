@@ -1057,15 +1057,16 @@ static int zns_advance_status(FemuCtrl *n, NvmeNamespace *ns, NvmeCmd *cmd,
 
     int64_t now = req->stime;
 
-    int64_t chnl_end_ts, chip_end_ts;
+    // int64_t chnl_end_ts, chip_end_ts;
+
 
     if(req->is_write) {
         /* write data needs to be transfered through the channel first */
-        chnl_end_ts = advance_channel_timestamp(n, 0, now, opcode);
-        io_done_ts = advance_chip_timestamp(n, 0, chnl_end_ts, opcode, 0);
+        // chnl_end_ts = advance_channel_timestamp(n, 0, now, opcode);
+        io_done_ts = advance_chip_timestamp(n, 0, now, opcode, 0);
     } else {
-        chip_end_ts = advance_chip_timestamp(n, 0, now, opcode, 0);
-        io_done_ts = advance_channel_timestamp(n, 0, chip_end_ts, opcode);
+        io_done_ts = advance_chip_timestamp(n, 0, now, opcode, 0);
+        // io_done_ts = advance_channel_timestamp(n, 0, chip_end_ts, opcode);
     }
 
     cur_time_need_to_emulate = io_done_ts - now;
