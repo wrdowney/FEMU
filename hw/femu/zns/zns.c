@@ -1046,6 +1046,36 @@ static uint16_t zns_map_dptr(FemuCtrl *n, size_t len, NvmeRequest *req)
     }
 }
 
+//TODO: figure out why function stalls zns mode loading
+static int zns_advance_status(FemuCtrl *n, NvmeNamespace *ns, NvmeCmd *cmd,
+                              NvmeRequest *req)
+{
+    uint8_t opcode = cmd->opcode;
+    int64_t io_done_ts = 0;
+    int64_t total_time_need_to_emulate = 0;
+    int64_t cur_time_need_to_emulate;
+
+    int64_t now = req->stime;
+
+    int64_t chnl_end_ts, chip_end_ts;
+
+    if(req->is_write) {
+        /* write data needs to be transfered through the channel first */
+        chnl_end_ts = advance_channel_timestamp(n, 0, now, opcode);
+        io_done_ts = advance_chip_timestamp(n, 0, chnl_end_ts, opcode, 0);
+    } else {
+        chip_end_ts = advance_chip_timestamp(n, 0, now, opcode, 0);
+        io_done_ts = advance_channel_timestamp(n, 0, chip_end_ts, opcode);
+    }
+
+    cur_time_need_to_emulate = io_done_ts - now;
+    if(cur_time_need_to_emulate > total_time_need_to_emulate) {
+        total_time_need_to_emulate = cur_time_need_to_emulate;
+    }
+
+    return 0;
+}
+
 static uint16_t zns_do_write(FemuCtrl *n, NvmeRequest *req, bool append,
                              bool wrz)
 {
@@ -1237,6 +1267,7 @@ err:
 static uint16_t zns_io_cmd(FemuCtrl *n, NvmeNamespace *ns, NvmeCmd *cmd,
                            NvmeRequest *req)
 {
+    zns_advance_status(n, ns, cmd, req);
     switch (cmd->opcode) {
     case NVME_CMD_READ:
         return zns_read(n, ns, cmd, req);
