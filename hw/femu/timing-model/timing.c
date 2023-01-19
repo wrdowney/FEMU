@@ -91,18 +91,18 @@ int64_t advance_chip_timestamp(FemuCtrl *n, int lunid, uint64_t now, int opcode,
         assert(0);
     }
 
-    pthread_spin_lock(&n->chip_locks[lunid]);
     if (n->zoned) {
         io_done_ts = now + lat;
     } else {
-       if (now < n->chip_next_avail_time[lunid]) {
+        pthread_spin_lock(&n->chip_locks[lunid]);
+        if (now < n->chip_next_avail_time[lunid]) {
             n->chip_next_avail_time[lunid] += lat;
         } else {
             n->chip_next_avail_time[lunid] = now + lat;
         }
         io_done_ts = n->chip_next_avail_time[lunid];
+        pthread_spin_unlock(&n->chip_locks[lunid]);
     }
-    pthread_spin_unlock(&n->chip_locks[lunid]);
 
     return io_done_ts;
 }
