@@ -1046,7 +1046,6 @@ static uint16_t zns_map_dptr(FemuCtrl *n, size_t len, NvmeRequest *req)
     }
 }
 
-//TODO: figure out why function stalls zns mode loading
 static int zns_advance_status(FemuCtrl *n, NvmeNamespace *ns, NvmeCmd *cmd,
                               NvmeRequest *req)
 {
@@ -1073,6 +1072,8 @@ static int zns_advance_status(FemuCtrl *n, NvmeNamespace *ns, NvmeCmd *cmd,
     if(cur_time_need_to_emulate > total_time_need_to_emulate) {
         total_time_need_to_emulate = cur_time_need_to_emulate;
     }
+
+    req->expire_time = now + total_time_need_to_emulate;
 
     return 0;
 }
